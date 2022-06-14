@@ -30,22 +30,20 @@ example.use(express.static("public", { maxAge: "1h" }));
 
 example.use(morgan("tiny"));
 
-example.all(
-  "*",
-  process.env.NODE_ENV === "development"
-    ? (req, res, next) => {
-        purgeRequireCache();
+example.all("*", (req, res, next) => {
+  if (process.env.NODE_ENV === "development") {
+    purgeRequireCache();
+  }
 
-        return createRequestHandler({
-          build: require(BUILD_DIR),
-          mode: process.env.NODE_ENV,
-        })(req, res, next);
-      }
-    : createRequestHandler({
-        build: require(BUILD_DIR),
-        mode: process.env.NODE_ENV,
-      })
-);
+  // req.url is a relative path with no reference to
+  // the mount path so adding it manually
+  req.url = "/example" + req.url;
+
+  return createRequestHandler({
+    build: require(BUILD_DIR),
+    mode: process.env.NODE_ENV,
+  })(req, res, next);
+});
 
 /**************************************************/
 
